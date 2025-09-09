@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente de Reuniões Icatu</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FFFFFF;
+        }
+        .recording-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background-color: red;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+        .loader {
+            border: 4px solid #e5e7eb;
+            border-top-color: #1B3157;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .card-content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: #1B3157;
+        }
+        .card-content ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .card-content p {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        .card-content strong {
+            font-weight: 600;
+            color: #1B3157;
+        }
+        .action-btn {
+            background-color: #eef2ff;
+            color: #1B3157;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #e0e7ff;
+        }
+        .action-btn:hover {
+            background-color: #e0e7ff;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+        <!-- Cabeçalho -->
+        <header class="text-center mb-10 flex justify-center">
+             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXQ2_f_kv19fm4wOPlsm74RASRrhQr6FLMsw&s" alt="Logo Icatu Seguros" class="h-16">
+        </header>
+
+        <!-- Seção de Instruções -->
+        <section id="instructions" class="bg-blue-50 p-6 rounded-2xl shadow-lg mb-8 border" style="border-color: #e0e7ff; background-color: #f0f8ff;">
+            <h2 class="text-2xl font-semibold mb-4" style="color: #1B3157;">Como Usar o Assistente</h2>
+            <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                <li>Clique no botão azul com o <strong>microfone</strong> para iniciar a gravação da sua reunião.</li>
+                <li>Se o navegador pedir, <strong>permita o acesso</strong> ao seu microfone.</li>
+                <li>Ao final da reunião, clique no botão vermelho de <strong>parar</strong>.</li>
+                <li>Aguarde alguns segundos enquanto a IA gera a <strong>transcrição</strong>, o <strong>resumo</strong> e os <strong>insights</strong>.</li>
+                <li>Use os botões de <strong>Copiar</strong>, <strong>Salvar .txt</strong> ou <strong>Gerar E-mail</strong> para exportar o conteúdo.</li>
+            </ol>
+        </section>
+
+        <!-- Seção Principal de Gravação -->
+        <main class="bg-gray-50 p-6 rounded-2xl shadow-lg mb-8 border border-gray-200">
+            <div class="flex flex-col items-center justify-center space-y-6">
+                <button id="recordBtn" class="flex items-center justify-center w-24 h-24 text-white rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-4" style="background-color: #1B3157; border-color: #5FBB48;">
+                    <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                    <svg id="stopIcon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect width="10" height="10" x="7" y="7" rx="1"/></svg>
+                </button>
+                <div id="status" class="text-gray-600 font-medium h-6 text-center">
+                    Clique para iniciar a gravação
+                </div>
+            </div>
+
+            <!-- Área de Transcrição -->
+            <div id="transcriptionContainer" class="mt-8 hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold" style="color: #1B3157;">Transcrição</h2>
+                    <div class="flex space-x-2">
+                        <button id="copyTranscriptBtn" class="action-btn">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                           <span>Copiar</span>
+                        </button>
+                        <button id="saveTranscriptBtn" class="action-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            <span>Salvar .txt</span>
+                        </button>
+                    </div>
+                </div>
+                <div id="transcription" class="w-full h-48 p-4 bg-white border border-gray-200 rounded-lg overflow-y-auto">
+                    <p class="text-gray-500 italic">Aguardando o início da fala...</p>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Seção de Resultados IA -->
+        <section id="results" class="hidden grid lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-semibold" style="color: #1B3157;">Resumo da Reunião</h2>
+                    <div id="summaryLoader" class="loader hidden"></div>
+                </div>
+                <div id="summary" class="text-gray-700 space-y-2 card-content min-h-[150px] flex-grow"></div>
+                <div class="mt-4 flex space-x-2">
+                    <button id="copySummaryBtn" class="action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        <span>Copiar</span>
+                    </button>
+                    <button id="saveSummaryBtn" class="action-btn">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                       <span>Salvar .txt</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-2xl shadow-lg border border-gray-200 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-semibold" style="color: #1B3157;">Principais Insights</h2>
+                    <div id="insightsLoader" class="loader hidden"></div>
+                </div>
+                <div id="insights" class="text-gray-700 space-y-2 card-content min-h-[150px] flex-grow"></div>
+                 <div class="mt-4 flex space-x-2">
+                    <button id="copyInsightsBtn" class="action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                        <span>Copiar</span>
+                    </button>
+                    <button id="saveInsightsBtn" class="action-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        <span>Salvar .txt</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Seção de Email -->
+        <section id="emailSection" class="hidden bg-gray-50 p-6 rounded-2xl shadow-lg border border-gray-200">
+             <h2 class="text-2xl font-semibold mb-2" style="color: #1B3157;">Exportar Tudo por E-mail</h2>
+             <p class="text-gray-600 mb-4">Informe o seu e-mail para receber o conteúdo na sua caixa de entrada.</p>
+             <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <input type="email" id="emailInput" placeholder="seu.email@exemplo.com" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5FBB48] focus:border-[#5FBB48] transition">
+                <button id="sendEmailBtn" class="w-full sm:w-auto text-white font-semibold px-6 py-2 rounded-lg transition-colors flex items-center justify-center gap-2" style="background-color: #5FBB48; hover:opacity-90;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Gerar E-mail
+                </button>
+             </div>
+        </section>
+
+        <!-- Modal de Erro -->
+        <div id="errorModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 max-w-sm text-center shadow-xl">
+                <h3 class="text-xl font-bold text-red-600 mb-4">Ocorreu um Erro</h3>
+                <p id="errorMessage" class="text-gray-700 mb-6"></p>
+                <button id="closeModalBtn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Elementos da UI
+        const recordBtn = document.getElementById('recordBtn');
+        const micIcon = document.getElementById('micIcon');
+        const stopIcon = document.getElementById('stopIcon');
+        const statusEl = document.getElementById('status');
+        const transcriptionContainer = document.getElementById('transcriptionContainer');
+        const transcriptionEl = document.getElementById('transcription');
+        const resultsEl = document.getElementById('results');
+        const summaryEl = document.getElementById('summary');
+        const insightsEl = document.getElementById('insights');
+        const summaryLoader = document.getElementById('summaryLoader');
+        const insightsLoader = document.getElementById('insightsLoader');
+        const errorModal = document.getElementById('errorModal');
+        const errorMessage = document.getElementById('errorMessage');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const emailSection = document.getElementById('emailSection');
+        const emailInput = document.getElementById('emailInput');
+        
+        // Botões de ação
+        const copyTranscriptBtn = document.getElementById('copyTranscriptBtn');
+        const saveTranscriptBtn = document.getElementById('saveTranscriptBtn');
+        const copySummaryBtn = document.getElementById('copySummaryBtn');
+        const saveSummaryBtn = document.getElementById('saveSummaryBtn');
+        const copyInsightsBtn = document.getElementById('copyInsightsBtn');
+        const saveInsightsBtn = document.getElementById('saveInsightsBtn');
+        const sendEmailBtn = document.getElementById('sendEmailBtn');
+
+        let isRecording = false;
+        let recognition;
+        let fullTranscript = '';
+        const API_KEY = "";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${API_KEY}`;
+
+        // Lógica de Reconhecimento de Voz e Verificação de Ambiente
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const isApiSupported = !!SpeechRecognition;
+        const isSecureContext = window.location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+        if (!isApiSupported) {
+            recordBtn.disabled = true;
+            statusEl.textContent = 'Navegador incompatível.';
+            showError("Seu navegador não suporta a transcrição de voz. Por favor, use o Google Chrome ou Firefox em um computador ou dispositivo Android.");
+        } else if (!isSecureContext) {
+            recordBtn.disabled = true;
+            recordBtn.style.backgroundColor = '#9ca3af';
+            recordBtn.style.cursor = 'not-allowed';
+            statusEl.textContent = 'Requer conexão segura (HTTPS)';
+            showError("Por segurança, seu navegador só permite usar o microfone em páginas seguras (HTTPS). Para corrigir, acesse esta página através de um link que comece com 'https://'.");
+        } else {
+            // Se tudo estiver OK, configura o reconhecimento de voz
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'pt-BR';
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+                    else interimTranscript += event.results[i][0].transcript;
+                }
+                transcriptionEl.innerHTML = `<p>${fullTranscript}<span class="text-gray-500">${interimTranscript}</span></p>`;
+                if (finalTranscript) {
+                    fullTranscript += finalTranscript + ' ';
+                    transcriptionEl.innerHTML = `<p>${fullTranscript}</p>`;
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                let errorMsg = "Ocorreu um erro na transcrição.";
+                if (event.error === 'no-speech') errorMsg = "Nenhuma fala foi detectada. Verifique seu microfone.";
+                else if (event.error === 'audio-capture') errorMsg = "Falha ao capturar áudio. Verifique as permissões do microfone.";
+                else if (event.error === 'not-allowed') errorMsg = "A permissão para o microfone foi negada. Altere nas configurações do navegador.";
+                showError(errorMsg);
+                stopRecording();
+            };
+        }
+
+        // Gravação
+        recordBtn.addEventListener('click', () => {
+            if (!isApiSupported || !isSecureContext) return;
+            isRecording = !isRecording;
+            isRecording ? startRecording() : stopRecording();
+        });
+
+        function startRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
+                fullTranscript = '';
+                transcriptionEl.innerHTML = `<p class="text-gray-500 italic">Ouvindo...</p>`;
+                transcriptionContainer.classList.remove('hidden');
+                resultsEl.classList.add('hidden');
+                emailSection.classList.add('hidden');
+                summaryEl.innerHTML = '';
+                insightsEl.innerHTML = '';
+                recognition.start();
+                micIcon.classList.add('hidden');
+                stopIcon.classList.remove('hidden');
+                recordBtn.style.backgroundColor = '#d9534f';
+                statusEl.innerHTML = `<div class="flex items-center gap-2"><span class="recording-indicator"></span>Gravando...</div>`;
+            }).catch(err => {
+                isRecording = false; // Reseta o estado
+                // Reseta a UI do botão
+                micIcon.classList.remove('hidden');
+                stopIcon.classList.add('hidden');
+                recordBtn.style.backgroundColor = '#1B3157';
+                statusEl.textContent = 'Clique para iniciar a gravação';
+
+                // Mostra erro específico
+                if (err.name === 'NotAllowedError') {
+                    showError("Você negou a permissão para o microfone. Para gravar, é preciso autorizar o acesso nas configurações de site do seu navegador.");
+                } else {
+                    showError("Não foi possível acessar seu microfone. Verifique se ele está conectado e não está sendo usado por outro aplicativo.");
+                }
+            });
+        }
+
+        function stopRecording() {
+            if (recognition) recognition.stop();
+            micIcon.classList.remove('hidden');
+            stopIcon.classList.add('hidden');
+            recordBtn.style.backgroundColor = '#1B3157';
+            statusEl.textContent = 'Gravação finalizada. Gerando análise...';
+
+            if (fullTranscript.trim().length > 10) {
+                analyzeTranscript(fullTranscript);
+            } else {
+                 statusEl.textContent = 'Gravação muito curta. Clique para gravar novamente.';
+            }
+        }
+        
+        // Análise com IA
+        async function callGeminiAPI(systemPrompt, userQuery) {
+            try {
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                };
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch(error) {
+                console.error("Erro ao chamar a API Gemini:", error);
+                showError("Não foi possível conectar com a IA. Tente mais tarde.");
+                return null;
+            }
+        }
+
+        async function analyzeTranscript(transcript) {
+            resultsEl.classList.remove('hidden');
+            emailSection.classList.remove('hidden');
+            summaryLoader.classList.remove('hidden');
+            insightsLoader.classList.remove('hidden');
+            const [summary, insights] = await Promise.all([getSummary(transcript), getInsights(transcript)]);
+            
+            summaryLoader.classList.add('hidden');
+            if(summary) summaryEl.innerHTML = formatResponse(summary);
+
+            insightsLoader.classList.add('hidden');
+            if(insights) insightsEl.innerHTML = formatResponse(insights);
+
+            statusEl.textContent = 'Análise completa. Clique para uma nova gravação.';
+        }
+
+        function getSummary(transcript) {
+            const systemPrompt = "Você é um assistente de IA especialista em resumir transcrições de reuniões. Crie um resumo conciso e claro dos pontos principais discutidos. Use bullet points para destacar as decisões-chave e ações a serem tomadas.";
+            const userQuery = `Por favor, resuma a seguinte transcrição de reunião:\n\n---\n\n${transcript}`;
+            return callGeminiAPI(systemPrompt, userQuery);
+        }
+
+        function getInsights(transcript) {
+            const systemPrompt = "Você é um analista de negócios e estrategista de IA. Analise a transcrição e extraia insights acionáveis. Identifique tópicos, itens de ação com responsáveis, sentimentos e oportunidades. Formate usando títulos e bullet points.";
+            const userQuery = `Por favor, analise a seguinte transcrição de reunião e gere insights:\n\n---\n\n${transcript}`;
+            return callGeminiAPI(systemPrompt, userQuery);
+        }
+
+        function formatResponse(text) {
+             return text
+                .replace(/\*\*(.*?)\*\*/g, '<h3>$1</h3>') 
+                .replace(/(\r\n|\n|\r)/gm, "<br>") 
+                .replace(/\* (.*?)(<br>|$)/g, '<ul><li>$1</li></ul>') 
+                .replace(/<\/ul><br><ul>/g, ''); 
+        }
+
+        // Funções de Ação (Copiar, Salvar, Email)
+        function copyToClipboard(elementId, button) {
+            const content = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = 'Copiado!';
+                setTimeout(() => { button.innerHTML = originalText; }, 2000);
+            }).catch(err => showError('Falha ao copiar texto.'));
+        }
+
+        function saveAsTxt(elementId, filename) {
+            const content = document.getElementById(elementId).innerText;
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        function generateEmail() {
+            const to = emailInput.value;
+            const subject = "Notas da Reunião - " + new Date().toLocaleDateString("pt-BR");
+            const transcriptContent = document.getElementById('transcription').innerText;
+            const summaryContent = document.getElementById('summary').innerText;
+            const insightsContent = document.getElementById('insights').innerText;
+
+            let body = `Olá,\n\nSeguem as notas da reunião de hoje:\n\n`;
+            body += `------------------------------\n`;
+            body += `TRANSCRIÇÃO COMPLETA\n`;
+            body += `------------------------------\n${transcriptContent}\n\n`;
+            body += `------------------------------\n`;
+            body += `RESUMO DA REUNIÃO\n`;
+            body += `------------------------------\n${summaryContent}\n\n`;
+            body += `------------------------------\n`;
+            body += `PRINCIPAIS INSIGHTS\n`;
+            body += `------------------------------\n${insightsContent}\n\n`;
+            body += `Gerado pelo Assistente de Reuniões Icatu.`;
+            
+            window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        // Event Listeners
+        copyTranscriptBtn.addEventListener('click', () => copyToClipboard('transcription', copyTranscriptBtn));
+        saveTranscriptBtn.addEventListener('click', () => saveAsTxt('transcription', 'transcricao.txt'));
+        copySummaryBtn.addEventListener('click', () => copyToClipboard('summary', copySummaryBtn));
+        saveSummaryBtn.addEventListener('click', () => saveAsTxt('summary', 'resumo.txt'));
+        copyInsightsBtn.addEventListener('click', () => copyToClipboard('insights', copyInsightsBtn));
+        saveInsightsBtn.addEventListener('click', () => saveAsTxt('insights', 'insights.txt'));
+        sendEmailBtn.addEventListener('click', generateEmail);
+        
+        // Modal
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorModal.classList.remove('hidden');
+            errorModal.classList.add('flex');
+        }
+        closeModalBtn.addEventListener('click', () => {
+            errorModal.classList.add('hidden');
+            errorModal.classList.remove('flex');
+        });
+    </script>
+</body>
+</html>
+

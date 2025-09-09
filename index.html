@@ -263,18 +263,40 @@
                 else if (event.error === 'audio-capture') errorMsg = "Falha ao capturar áudio. Verifique as permissões do microfone.";
                 else if (event.error === 'not-allowed') errorMsg = "A permissão para o microfone foi negada. Altere nas configurações do navegador.";
                 showError(errorMsg);
-                stopRecording();
+                isRecording = false;
+            };
+
+            recognition.onend = () => {
+                isRecording = false; // Garante que o estado de gravação seja atualizado
+                
+                micIcon.classList.remove('hidden');
+                stopIcon.classList.add('hidden');
+                recordBtn.style.backgroundColor = '#5FBB48';
+
+                if (fullTranscript.trim().split(' ').length >= 3) {
+                    statusEl.textContent = 'Gravação finalizada. Gerando análise...';
+                    analyzeTranscript(fullTranscript);
+                } else {
+                    statusEl.textContent = 'Gravação muito curta. Clique para gravar novamente.';
+                    resultsEl.classList.add('hidden');
+                    emailSection.classList.add('hidden');
+                }
             };
         }
 
         // Gravação
         recordBtn.addEventListener('click', () => {
             if (!isApiSupported || !isSecureContext) return;
-            isRecording = !isRecording;
-            isRecording ? startRecording() : stopRecording();
+            
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
         });
 
         function startRecording() {
+            isRecording = true;
             navigator.mediaDevices.getUserMedia({ audio: true }).then(() => {
                 fullTranscript = '';
                 transcriptionEl.innerHTML = `<p class="text-gray-500 italic">Ouvindo...</p>`;
@@ -290,13 +312,11 @@
                 statusEl.innerHTML = `<div class="flex items-center gap-2"><span class="recording-indicator"></span>Gravando...</div>`;
             }).catch(err => {
                 isRecording = false; // Reseta o estado
-                // Reseta a UI do botão
                 micIcon.classList.remove('hidden');
                 stopIcon.classList.add('hidden');
                 recordBtn.style.backgroundColor = '#5FBB48';
                 statusEl.textContent = 'Clique para iniciar a gravação';
 
-                // Mostra erro específico
                 if (err.name === 'NotAllowedError') {
                     showError("Você negou a permissão para o microfone. Para gravar, é preciso autorizar o acesso nas configurações de site do seu navegador.");
                 } else {
@@ -306,16 +326,8 @@
         }
 
         function stopRecording() {
-            if (recognition) recognition.stop();
-            micIcon.classList.remove('hidden');
-            stopIcon.classList.add('hidden');
-            recordBtn.style.backgroundColor = '#5FBB48';
-            statusEl.textContent = 'Gravação finalizada. Gerando análise...';
-
-            if (fullTranscript.trim().split(' ').length >= 3) {
-                analyzeTranscript(fullTranscript);
-            } else {
-                 statusEl.textContent = 'Gravação muito curta. Clique para gravar novamente.';
+            if (recognition) {
+                recognition.stop();
             }
         }
         
@@ -441,4 +453,8 @@
     </script>
 </body>
 </html>
+
+
+
+
 

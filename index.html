@@ -84,18 +84,18 @@
         <section id="instructions" class="bg-blue-50 p-6 rounded-2xl shadow-lg mb-8 border" style="border-color: #e0e7ff; background-color: #f0f8ff;">
             <h2 class="text-2xl font-semibold mb-4" style="color: #1B3157;">Como Usar o Assistente</h2>
             <ol class="list-decimal list-inside space-y-2 text-gray-700">
-                <li>Clique no botão azul com o <strong>microfone</strong> para iniciar a gravação da sua reunião.</li>
+                <li>Clique no botão verde com o <strong>microfone</strong> para iniciar a gravação.</li>
                 <li>Se o navegador pedir, <strong>permita o acesso</strong> ao seu microfone.</li>
-                <li>Ao final da reunião, clique no botão vermelho de <strong>parar</strong>.</li>
+                <li>Ao final, clique no botão vermelho de <strong>parar</strong>. Grave ao menos 3 palavras para a análise funcionar.</li>
                 <li>Aguarde alguns segundos enquanto a IA gera a <strong>transcrição</strong>, o <strong>resumo</strong> e os <strong>insights</strong>.</li>
-                <li>Use os botões de <strong>Copiar</strong>, <strong>Salvar .txt</strong> ou <strong>Gerar E-mail</strong> para exportar o conteúdo.</li>
+                <li>Use os botões de <strong>Copiar</strong>, <strong>Salvar .txt</strong> ou <strong>Gerar E-mail</strong> para exportar.</li>
             </ol>
         </section>
 
         <!-- Seção Principal de Gravação -->
         <main class="bg-gray-50 p-6 rounded-2xl shadow-lg mb-8 border border-gray-200">
             <div class="flex flex-col items-center justify-center space-y-6">
-                <button id="recordBtn" class="flex items-center justify-center w-24 h-24 text-white rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-4" style="background-color: #1B3157; border-color: #5FBB48;">
+                <button id="recordBtn" class="flex items-center justify-center w-24 h-24 text-white rounded-full shadow-lg transition-all duration-300 focus:outline-none focus:ring-4" style="background-color: #5FBB48; border-color: #1B3157;">
                     <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
                     <svg id="stopIcon" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect width="10" height="10" x="7" y="7" rx="1"/></svg>
                 </button>
@@ -132,7 +132,7 @@
                     <h2 class="text-2xl font-semibold" style="color: #1B3157;">Resumo da Reunião</h2>
                     <div id="summaryLoader" class="loader hidden"></div>
                 </div>
-                <div id="summary" class="text-gray-700 space-y-2 card-content min-h-[150px] flex-grow"></div>
+                <div id="summary" class="text-gray-700 space-y-2 card-content flex-grow"></div>
                 <div class="mt-4 flex space-x-2">
                     <button id="copySummaryBtn" class="action-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -150,7 +150,7 @@
                     <h2 class="text-2xl font-semibold" style="color: #1B3157;">Principais Insights</h2>
                     <div id="insightsLoader" class="loader hidden"></div>
                 </div>
-                <div id="insights" class="text-gray-700 space-y-2 card-content min-h-[150px] flex-grow"></div>
+                <div id="insights" class="text-gray-700 space-y-2 card-content flex-grow"></div>
                  <div class="mt-4 flex space-x-2">
                     <button id="copyInsightsBtn" class="action-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -293,7 +293,7 @@
                 // Reseta a UI do botão
                 micIcon.classList.remove('hidden');
                 stopIcon.classList.add('hidden');
-                recordBtn.style.backgroundColor = '#1B3157';
+                recordBtn.style.backgroundColor = '#5FBB48';
                 statusEl.textContent = 'Clique para iniciar a gravação';
 
                 // Mostra erro específico
@@ -309,10 +309,10 @@
             if (recognition) recognition.stop();
             micIcon.classList.remove('hidden');
             stopIcon.classList.add('hidden');
-            recordBtn.style.backgroundColor = '#1B3157';
+            recordBtn.style.backgroundColor = '#5FBB48';
             statusEl.textContent = 'Gravação finalizada. Gerando análise...';
 
-            if (fullTranscript.trim().length > 10) {
+            if (fullTranscript.trim().split(' ').length >= 3) {
                 analyzeTranscript(fullTranscript);
             } else {
                  statusEl.textContent = 'Gravação muito curta. Clique para gravar novamente.';
